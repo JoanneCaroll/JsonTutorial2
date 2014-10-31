@@ -1,36 +1,79 @@
 package com.example.jsontutorial;
-
-import android.support.v7.app.ActionBarActivity;
+ 
+import java.util.ArrayList;
+import java.util.HashMap;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.util.Log;
+import android.widget.ListView;
+ 
+public class MainActivity extends Activity {
 
-
-public class MainActivity extends ActionBarActivity {
-
+    JSONObject jsonobject;
+    JSONArray jsonarray;
+    ListView listview;
+    ListViewAdapter adapter;
+    ProgressDialog mProgressDialog;
+    ArrayList<HashMap<String, String>> arraylist;
+    static String RANK = "rank";
+    static String COUNTRY = "country";
+    static String POPULATION = "population";
+    static String FLAG = "flag";
+ 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.listview_main);
+        new DownloadJSON().execute();
     }
 
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
+    private class DownloadJSON extends AsyncTask<Void, Void, Void> {
+ 
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mProgressDialog = new ProgressDialog(MainActivity.this);
+            mProgressDialog.setMessage("Please wait...");
+            mProgressDialog.setIndeterminate(false);
+            mProgressDialog.show();
         }
-        return super.onOptionsItemSelected(item);
+ 
+        @Override
+        protected Void doInBackground(Void... params) {
+            arraylist = new ArrayList<HashMap<String, String>>();
+            jsonobject = JSONfunctions
+                    .getJSONfromURL("http://www.androidbegin.com/tutorial/jsonparsetutorial.txt");
+ 
+            try {
+                jsonarray = jsonobject.getJSONArray("worldpopulation");
+ 
+                for (int i = 0; i < jsonarray.length(); i++) {
+                    HashMap<String, String> map = new HashMap<String, String>();
+                    jsonobject = jsonarray.getJSONObject(i);
+                    map.put("rank", jsonobject.getString("rank"));
+                    map.put("country", jsonobject.getString("country"));
+                    map.put("population", jsonobject.getString("population"));
+                    map.put("flag", jsonobject.getString("flag"));
+                    arraylist.add(map);
+                }
+            } catch (JSONException e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return null;
+        }
+ 
+        @Override
+        protected void onPostExecute(Void args) {
+            listview = (ListView) findViewById(R.id.listview);
+            adapter = new ListViewAdapter(MainActivity.this, arraylist);
+            listview.setAdapter(adapter);
+            mProgressDialog.dismiss();
+        }
     }
 }
